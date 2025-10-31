@@ -3,6 +3,8 @@ import { generateHash, verifyHash } from "../Utils/hash";
 import { user_collection } from "../Config/Db";
 import { generate_token } from "../Utils/token_generate";
 import { setCookie } from "hono/cookie";
+import { UserSchema } from "../Model/UserModel";
+import { ObjectId } from "mongodb";
 
 export const loginService = async (c: Context) => {
     const { email, password } = await c.req.json();
@@ -33,8 +35,9 @@ export const loginService = async (c: Context) => {
 
 export const SignUp = async (c: Context) => {
     const { name, email, password } = await c.req.json();
-    if (!name || !email || !password) return c.json({ message: "all data are essansitial"}, 404);
-
+    const parse = UserSchema.pick({ name: true, email: true, password: true })
+        .safeParse({ name, email, password });
+    if (!parse.success) return c.json({ message: parse.error.message }, 404);
     try {
         const is_exist = await user_collection.findOne({ email });
         if (is_exist) return c.json({ message: "User already exist" }, 404);
@@ -61,8 +64,24 @@ export const verifyUser = async (c: Context) => {
     if (!id || !otp) return c.json({ message: "all data are essansitial"}, 404);
 
     try {
-        
+        const user = await user_collection.findOne({ _id: new ObjectId(id) });
+        if (!user) return c.json({ message: "User not found" }, 404);
+
+        if (user.otp !== otp) return c.json({ message: "otp is not matching" }, 404);
+
+        await user_collection.updateOne({ _id: new ObjectId(id) }, { $set: { auth: true } });
+        c.json({ message: "User verified successfully" });
     } catch (error: any) {
-        
+        c.json({ message: error.message }, 500);
+    }
+}
+
+export const getAllUsers = async (c: Context) => {
+    try {
+        const users = await user_collection.find({}).toArray();
+        if (!users) return c.json({ message: "User not found" }, 404);
+        c.json({ message: "User found successfully", users });
+    } catch (error: any) {
+        c.json({ message: error.message }, 500)
     }
 }
