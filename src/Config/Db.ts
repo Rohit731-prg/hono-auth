@@ -9,4 +9,5 @@ const client = new MongoClient(url);
 export const db_client = client;
 export const db = client.db("hono-auth");
 
-export const  user_collection = db.collection("users")
+export const  user_collection = db.collection("users");
+export const address_collection = db.collection("address");
