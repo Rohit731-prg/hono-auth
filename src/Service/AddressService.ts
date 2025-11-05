@@ -13,39 +13,39 @@ export const createAddress = async (c: Context) => {
     }).safeParse({
         street, city, state, user
     });
-    if (!perse.success) return c.json({ message: "all requerment is essentional"}, 404);
+    if (!perse.success) return c.json({ message: "all requerment is essentional" }, 404);
     try {
-        const user_exist = await user_collection.findOne({ _id: new ObjectId(user)});
-        if (!user_exist) return c.json({ message: "user not found"});
+        const user_exist = await user_collection.findOne({ _id: new ObjectId(user) });
+        if (!user_exist) return c.json({ message: "user not found" });
 
         await address_collection.insertOne({
             street, city, state, user
         });
-        return c.json({ message: "address added "}, 201);
+        return c.json({ message: "address added " }, 201);
     } catch (error: any) {
-        c.json({ message: error.message}, 500)
+        c.json({ message: error.message }, 500)
     }
 }
 
 export const getAllAddress = async (c: Context) => {
     try {
-        const all_address = address_collection.aggregate([
+        const all_address = await address_collection.aggregate([
             {
                 $lookup: {
-                    from: "users",           // name of the user collection
-                    localField: "user",      // field in address_collection (user ID)
-                    foreignField: "_id",     // field in user_collection
-                    as: "user"               // alias for joined data
+                    from: "users",
+                    localField: "user",
+                    foreignField: "_id",
+                    as: "user"
                 }
             },
-            {
-                $unwind: "$user"           // flatten user array
-            }
-        ]);
-        if (!all_address) return c.json({ message: "no address fonund "}, 404);
+            { $unwind: "$user" }
+        ]).toArray(); // ✅ Convert cursor to array
 
-        c.json(all_address)
+        if (!all_address.length)
+            return c.json({ message: "No address found" }, 404);
+
+        return c.json(all_address); // ✅ MUST return
     } catch (error: any) {
-        c.json({ message: error.message });
+        return c.json({ message: error.message }, 500); // ✅ MUST return
     }
 }
