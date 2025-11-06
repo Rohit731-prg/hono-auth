@@ -2,6 +2,9 @@ import { Context } from "hono";
 import { AddressSchema } from "../Model/AdressModel";
 import { address_collection, user_collection } from "../Config/Db";
 import { ObjectId } from "mongodb";
+import { omit } from "zod/v4/core/util.cjs";
+import { email } from "zod";
+import { password } from "bun";
 
 export const createAddress = async (c: Context) => {
     const { street, city, state, user } = await c.req.json();
@@ -36,13 +39,16 @@ export const getAllAddress = async (c: Context) => {
                     from: "users",
                     localField: "user",
                     foreignField: "_id",
-                    as: "user"
+                    as: "user",
+                    pipeline: [
+                        { $project: { password: 0, email: 0 } }
+                    ]
                 }
             },
-            { $unwind: "$user" }
+            { $unwind: "$user" },
         ]).toArray();
 
-        
+
         if (!all_address.length)
             return c.json({ message: "No address found" }, 404);
 
