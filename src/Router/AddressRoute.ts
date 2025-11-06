@@ -5,6 +5,6 @@ import { createAddress, getAllAddress } from "../Service/AddressService";
 const router = new Hono();
 
 router.post("/create", authMiddleware, createAddress);
-router.get("all", authMiddleware, getAllAddress);
+router.get("/all", authMiddleware, getAllAddress);
 
 export default router;

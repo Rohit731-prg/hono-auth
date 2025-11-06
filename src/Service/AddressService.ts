@@ -18,8 +18,9 @@ export const createAddress = async (c: Context) => {
         const user_exist = await user_collection.findOne({ _id: new ObjectId(user) });
         if (!user_exist) return c.json({ message: "user not found" });
 
+        const user_id = new ObjectId(user);
         await address_collection.insertOne({
-            street, city, state, user
+            street, city, state, user: user_id
         });
         return c.json({ message: "address added " }, 201);
     } catch (error: any) {
@@ -39,8 +40,9 @@ export const getAllAddress = async (c: Context) => {
                 }
             },
             { $unwind: "$user" }
-        ]).toArray(); // ✅ Convert cursor to array
+        ]).toArray();
 
+        
         if (!all_address.length)
             return c.json({ message: "No address found" }, 404);
 
